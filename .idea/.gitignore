@@ -3,4 +3,4 @@
 /workspace.xml
 *.csv
 stockAnalysis/stockData/combined2513days.csv
-
+*.v2
