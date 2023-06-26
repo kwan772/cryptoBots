@@ -1,0 +1,9 @@
+tensorflow
+tensorflow_ranking
+tensorflow_recommenders
+numpy
+pandas
+scikit-learn
+sqlalchemy
+pymysql
+cryptography
