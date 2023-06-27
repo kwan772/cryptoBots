@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -32,10 +33,13 @@ class Process_data:
             df_new = []
             train_sample = []
             label_sample = []
+            count = 1
 
             for i in range(window_size*1475+1475*37, len(df), num_of_stocks):
                 one_day_train = []
                 one_day_label = []
+                print("processing day " + str(count))
+                count += 1
                 for k in range(0, num_of_stocks):
                     temp_train = []
                     temp_label = []
@@ -89,6 +93,9 @@ class Process_data:
                     'label': scaled_label_sample[cut_of:]}
             original_test_labels = original_label_sample[cut_of:]
 
+            with open('processed_combined_stock_data.pickle', 'wb') as f:
+                pickle.dump((train, test, original_test_labels), f)
+
             return train, test, original_test_labels
             # print(df_new)
 
@@ -133,6 +140,12 @@ class Process_data:
                 conn.commit()
 
             print("Update complete!")
+
+    @staticmethod
+    def load_processed_data():
+        with open('processed_combined_stock_data.pickle', 'rb') as f:
+            train, test, original_test_labels = pickle.load(f)
+        return train, test, original_test_labels
 
 
 if __name__ == "__main__":

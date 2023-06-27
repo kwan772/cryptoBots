@@ -8,6 +8,7 @@ class RankingModel(tfrs.Model):
     def __init__(self, loss):
         super().__init__()
         stockNumber = 1475
+        self.loss = loss
 
         self.score_model = tf.keras.Sequential([
             # Learn multiple dense layers.
@@ -37,7 +38,7 @@ class RankingModel(tfrs.Model):
         ])
 
         self.task = tfrs.tasks.Ranking(
-            loss=loss,
+            loss=self.loss,
             metrics=[
                 tfr.keras.metrics.NDCGMetric(name="ndcg_metric"),
                 tf.keras.metrics.RootMeanSquaredError()
@@ -62,3 +63,10 @@ class RankingModel(tfrs.Model):
             labels=labels,
             predictions=scores,
         )
+
+    def get_config(self):
+        config = super(RankingModel, self).get_config()
+        config.update({
+            'loss': self.loss,
+        })
+        return config
