@@ -93,8 +93,8 @@ class Process_data:
                     'label': scaled_label_sample[cut_of:]}
             original_test_labels = original_label_sample[cut_of:]
 
-            with open('processed_combined_stock_data.pickle', 'wb') as f:
-                pickle.dump((train, test, original_test_labels), f)
+            # with open('processed_stock_data.pickle', 'wb') as f:
+            #     pickle.dump((train, test, original_test_labels), f)
 
             return train, test, original_test_labels
             # print(df_new)
