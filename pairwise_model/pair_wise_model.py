@@ -1,43 +1,55 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, LSTM, Subtract
+from tensorflow.keras.layers import Dense, Subtract, Dropout
 from tensorflow.keras.models import Model
+from tensorflow.keras import regularizers
 
-class StockMovementPredictionModel(Model):
-    def __init__(self, input_shape=(7, 1475)):
-        super(StockMovementPredictionModel, self).__init__()
+class PairwiseRankingModel(Model):
+    def __init__(self, feature_dim):
+        super(PairwiseRankingModel, self).__init__()
 
-        # Shared layers
-        self.lstm1 = LSTM(50, activation='relu', return_sequences=True)
-        self.lstm2 = LSTM(25, activation='relu')
-        self.dense1 = Dense(10, activation='relu')
-
-        # Subtract layer to get the difference between the two outputs
-        self.subtract_layer = Subtract()
-
-        # Dense layer to make the final prediction
-        self.dense2 = Dense(1, activation='sigmoid')
+        self.dense1 = Dense(120, activation='relu')
+        self.dropout1 = Dropout(0.5)
+        self.dense2 = Dense(90, activation='relu')
+        self.dropout2 = Dropout(0.5)
+        self.dense3 = Dense(60, activation='relu')
+        self.dropout3 = Dropout(0.5)
+        self.dense4 = Dense(30, activation='relu')
+        self.dropout4 = Dropout(0.5)
+        self.dense5 = Dense(10, activation='relu')
+        self.dropout5 = Dropout(0.5)
+        self.dense6 = Dense(1)
 
     def call(self, inputs):
-        # Two inputs
+        # Separate the inputs into two sets
         input1, input2 = inputs
 
-        # Outputs from the shared layers for each input
-        shared_output1 = self.dense1(self.lstm2(self.lstm1(input1)))
-        shared_output2 = self.dense1(self.lstm2(self.lstm1(input2)))
+        # Get the output for the first set of inputs
+        x1 = self.dense1(input1)
+        x1 = self.dropout1(x1)
+        x1 = self.dense2(x1)
+        x1 = self.dropout2(x1)
+        x1 = self.dense3(x1)
+        x1 = self.dropout3(x1)
+        x1 = self.dense4(x1)
+        x1 = self.dropout4(x1)
+        x1 = self.dense5(x1)
+        x1 = self.dropout5(x1)
+        x1 = self.dense6(x1)
 
-        # Get the difference between the two outputs
-        diff = self.subtract_layer([shared_output1, shared_output2])
+        # Get the output for the second set of inputs
+        x2 = self.dense1(input2)
+        x2 = self.dropout1(x2)
+        x2 = self.dense2(x2)
+        x2 = self.dropout2(x2)
+        x2 = self.dense3(x2)
+        x2 = self.dropout3(x2)
+        x2 = self.dense4(x2)
+        x2 = self.dropout4(x2)
+        x2 = self.dense5(x2)
+        x2 = self.dropout5(x2)
+        x2 = self.dense6(x2)
 
-        # Make the final prediction
-        output = self.dense2(diff)
+        # Compute the difference in scores
+        diff = Subtract()([x1, x2])
 
-        return output
-
-# Create the model
-model = StockMovementPredictionModel()
-
-# Compile the model
-model.compile(optimizer='adam', loss='binary_crossentropy')
-
-# Fit the model
-model.fit([input1, input2], label, epochs=10, batch_size=32)
+        return diff
