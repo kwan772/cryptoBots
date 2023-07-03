@@ -35,7 +35,7 @@ class Process_data:
             label_sample = []
             count = 1
 
-            for i in range(window_size*1475+1475*37, len(df), num_of_stocks):
+            for i in range(window_size*num_of_stocks+num_of_stocks*37, len(df), num_of_stocks):
                 one_day_train = []
                 one_day_label = []
                 print("processing day " + str(count))
@@ -45,7 +45,7 @@ class Process_data:
                     temp_label = []
                     one_day_label.append(df.iloc[i+k]['next_day_change_percentage'])
                     for j in range(window_size, 0, -1):
-                        row = df.iloc[i+k-1475*j]
+                        row = df.iloc[i+k-num_of_stocks*j]
                         # temp_label.append(row['next_day_change_percentage'])
                         temp_train.append(row.drop(['next_day_change_percentage']).values)
                     one_day_train.append(temp_train)
@@ -146,6 +146,56 @@ class Process_data:
         with open('processed_combined_stock_data.pickle', 'rb') as f:
             train, test, original_test_labels = pickle.load(f)
         return train, test, original_test_labels
+
+    @staticmethod
+    def process_ranking_data():
+        # Create a connection to your MySQL database
+        num_of_stocks = 1475
+        db_connection_str = 'mysql+pymysql://root:' + os.getenv('DB_PASSWORD') + '@localhost/stock_data'
+        engine = create_engine(db_connection_str)
+        query = text(
+            "select close, Date, Symbol, volume, ema, rsi, macd, bollinger_high, bollinger_low, previous_day_change_percentage, next_day_change_percentage from new_stock_price where macd is not null order by date asc, symbol asc litmit 2950")
+
+        with engine.connect() as conn:
+            df = pd.read_sql(query, conn)
+            pd.set_option('display.max_columns', None)
+
+            # Convert 'Date' to datetime if not already
+            df['Date'] = pd.to_datetime(df['Date'])
+
+            # Sort values by 'Symbol' and 'Date'
+            df = df.sort_values(['Date', 'Symbol'])
+            window_size = 7
+
+            df.drop(['Symbol', 'Date', 'bollinger_high', 'bollinger_low'], axis=1, inplace=True)
+
+            df_new = []
+            train_sample = []
+            label_sample = []
+            count = 1
+
+            for i in range(window_size * num_of_stocks + num_of_stocks * 37, len(df), num_of_stocks):
+                one_day_train = []
+                one_day_label = []
+                print("processing day " + str(count))
+                count += 1
+                for k in range(0, num_of_stocks):
+                    temp_train = []
+                    temp_label = []
+                    one_day_label.append(df.iloc[i + k]['next_day_change_percentage'])
+                    for j in range(window_size, 0, -1):
+                        row = df.iloc[i + k - num_of_stocks * j]
+                        # temp_label.append(row['next_day_change_percentage'])
+                        temp_train.append(row.drop(['next_day_change_percentage']).values)
+                    one_day_train.append(temp_train)
+                    # one_day_label.append(temp_label)
+
+                train_sample.append(one_day_train)
+                label_sample.append(one_day_label)
+
+            train_sample = np.array(train_sample)
+            label_sample = np.array(label_sample)
+            original_label_sample = label_sample
 
 
 if __name__ == "__main__":

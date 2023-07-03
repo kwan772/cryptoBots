@@ -10,33 +10,6 @@ class RankingModel(tfrs.Model):
         stockNumber = 1475
         self.loss = loss
 
-        # self.score_model = tf.keras.Sequential([
-        #     # Learn multiple dense layers.
-        #     # tf.keras.layers.Dense(round(stockNumber + stockNumber * (30)), activation="relu"),
-        #     # tf.keras.layers.Dense(round(stockNumber + stockNumber * (20)), activation="relu"),
-        #     # tf.keras.layers.Dense(round(stockNumber + stockNumber * (10)), activation="relu"),
-        #     tf.keras.layers.Dense(round(stockNumber + stockNumber * (5)), activation="relu"),
-        #     tf.keras.layers.Dense(round(stockNumber + stockNumber * (5)), activation="relu"),
-        #     tf.keras.layers.Dense(round(stockNumber + stockNumber * (3)), activation="relu"),
-        #     tf.keras.layers.Dense(round(stockNumber + stockNumber * (1)), activation="relu"),
-        #     tf.keras.layers.Dense(round(stockNumber + stockNumber * (1/3)), activation="relu"),
-        #     # Make rating predictions in the final layer.
-        #     # tf.keras.layers.Dense(stockNumber)
-        #
-        #
-        #     # Learn multiple dense layers.
-        #     # tf.keras.layers.Dense(round(stockNumber + stockNumber * (2 / 3))),
-        #     # tf.keras.layers.BatchNormalization(),  # Batch Normalization layer
-        #     # tf.keras.layers.Activation('relu'),
-        #     #
-        #     # tf.keras.layers.Dense(round(stockNumber + stockNumber * (1 / 3))),
-        #     # tf.keras.layers.BatchNormalization(),  # Batch Normalization layer
-        #     # tf.keras.layers.Activation('relu'),
-        #
-        #     # Make rating predictions in the final layer.
-        #     tf.keras.layers.Dense(stockNumber, activation="sigmoid")
-        # ])
-
         self.score_model = tf.keras.Sequential([
             tf.keras.layers.Dense(round(stockNumber + stockNumber * (5)), activation="relu"),
             tf.keras.layers.Dense(round(stockNumber + stockNumber * (5)), activation="relu"),
