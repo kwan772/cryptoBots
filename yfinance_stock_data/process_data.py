@@ -157,31 +157,13 @@ class Process_data:
     @staticmethod
     def process_ranking_data():
         # Create a connection to your MySQL database
-        num_of_stocks = 1475
+        num_of_stocks = 1458
         db_connection_str = 'mysql+pymysql://root:' + os.getenv('DB_PASSWORD') + '@localhost/stock_data'
         engine = create_engine(db_connection_str)
-        input_dim = 134225
-
-        with engine.connect() as conn:
-            query = text(f'''
-            CREATE TEMPORARY TABLE temp_stocks_ranked AS
-            SELECT 
-              id as new_id, 
-              date(date) as d, 
-              RANK() OVER (
-                PARTITION BY date(date)
-                ORDER BY `next_day_change_percentage` DESC
-              ) AS ranking
-            FROM new_stock_price;
-            ''')
-            conn.execute(query)
-            conn.commit()
 
         query = text(
             f'''
-            SELECT * from new_stock_price a
-            JOIN temp_stocks_ranked b 
-            ON a.id = b.new_id
+            SELECT *, date(date) d from stock_price_with_rankings
             WHERE macd is not null''')
 
         with engine.connect() as conn:
@@ -191,8 +173,8 @@ class Process_data:
             # Sort values by 'Symbol' and 'Date'
             df = df.sort_values(['d', 'Symbol'])
             window_size = 7
+            df.drop(['Symbol', 'Date','id', 'Dividends', 'Stock Splits', 'd', 'Open', 'High', 'Low','SMA','Stoch_Oscillator','ADX', 'MFI','next_day_change_percentage'], axis=1, inplace=True)
             print(df.columns)
-            df.drop(['Symbol', 'Date', 'Bollinger_High', 'Bollinger_Low','id', 'Dividends', 'Stock Splits', 'rank', 'd', 'new_id'], axis=1, inplace=True)
 
 
 
@@ -200,7 +182,7 @@ class Process_data:
             label_sample = []
             count = 1
 
-            cols_to_scale = ['Open', 'High', 'Low', 'Close', 'Volume', 'SMA', 'EMA', 'RSI', 'MACD', 'Stoch_Oscillator', 'ADX', 'MFI', 'previous_day_change_percentage', 'ranking']
+            cols_to_scale = ['Close', 'Volume', 'EMA', 'RSI', 'MACD', 'previous_day_change_percentage', 'ranking', 'Bollinger_High', 'Bollinger_Low']
 
             # Initialize a scaler
             scaler = MinMaxScaler()
@@ -221,15 +203,19 @@ class Process_data:
                     for j in range(window_size, 0, -1):
                         row = df.iloc[i + k - num_of_stocks * j]
                         # temp_label.append(row['next_day_change_percentage'])
-                        temp_train.append(row.drop(['next_day_change_percentage','ranking']).values)
+                        temp_train.append(row.drop(['ranking']).values)
                     one_day_train.append(temp_train)
                     # one_day_label.append(temp_label)
 
                 train_sample.append(one_day_train)
                 label_sample.append(one_day_label)
 
+
+
             train_sample = np.array(train_sample)
             label_sample = np.array(label_sample)
+
+            print(train_sample.shape)
             original_label_sample = label_sample
 
             train_sample = train_sample.reshape(train_sample.shape[0], -1)
@@ -242,7 +228,86 @@ class Process_data:
             with open('processed_stock_ranking_data_all_symbols.pickle', 'wb') as f:
                 pickle.dump((train_sample, label_sample, original_label_sample), f)
 
+    @staticmethod
+    def test_process_ranking_data():
+        # Create a connection to your MySQL database
+        num_of_stocks = 1458
+        db_connection_str = 'mysql+pymysql://root:' + os.getenv('DB_PASSWORD') + '@localhost/stock_data'
+        engine = create_engine(db_connection_str)
+
+        query = text(
+            f'''
+                SELECT *, date(date) d from stock_price_with_rankings
+                WHERE macd is not null limit 145800''')
+
+        with engine.connect() as conn:
+            df = pd.read_sql(query, conn)
+            pd.set_option('display.max_columns', None)
+
+            # Sort values by 'Symbol' and 'Date'
+            df = df.sort_values(['d', 'Symbol'])
+            window_size = 7
+            df.drop(['Symbol', 'Date', 'id', 'Dividends', 'Stock Splits', 'd', 'Open', 'High', 'Low', 'SMA',
+                     'Stoch_Oscillator', 'ADX', 'MFI', 'next_day_change_percentage'], axis=1, inplace=True)
+            print(df.columns)
+
+            train_sample = []
+            label_sample = []
+            count = 1
+
+            cols_to_scale = ['Close', 'Volume', 'EMA', 'RSI', 'MACD', 'previous_day_change_percentage', 'ranking',
+                             'Bollinger_High', 'Bollinger_Low']
+
+            # Initialize a scaler
+            scaler = MinMaxScaler()
+
+            # Scale the columns
+            df[cols_to_scale] = scaler.fit_transform(df[cols_to_scale])
+
+            # each day
+            for i in range(window_size * num_of_stocks, len(df), num_of_stocks):
+                one_day_train = []
+                one_day_label = []
+                print("processing day " + str(count))
+                count += 1
+
+                # each stock
+                for k in range(0, num_of_stocks):
+                    temp_train = []
+                    # one_day_label.append(df.iloc[i + k]['ranking'])
+                    for j in range(window_size, 0, -1):
+                        row = df.iloc[i + k - num_of_stocks * j]
+                        # temp_label.append(row['next_day_change_percentage'])
+                        temp_train.append(row.drop(['ranking']).values)
+                    one_day_train.append(temp_train)
+                    # one_day_label.append(temp_label)
+
+                # training set for each stock
+                for k in range(0, num_of_stocks):
+                    one_day_label = [df.iloc[i + k]['ranking']]
+                    train_sample.append(one_day_train)
+                    label_sample.append(one_day_label)
+
+            train_sample = np.array(train_sample)
+            label_sample = np.array(label_sample)
+
+            print(train_sample.shape)
+            original_label_sample = label_sample
+
+            train_sample = train_sample.reshape(train_sample.shape[0], -1)
+
+            print(train_sample)
+            print(label_sample)
+            print(train_sample.shape)
+            print(label_sample.shape)
+            #
+            # with open('processed_stock_ranking_data_all_symbols.pickle', 'wb') as f:
+            #     pickle.dump((train_sample, label_sample, original_label_sample), f)
+            return (train_sample,label_sample,original_label_sample)
+
 
 if __name__ == "__main__":
-    Process_data.process_ranking_data()
+    data = Process_data.test_process_ranking_data()
+
+    print(data[1])
     # Process_data.calc_insert_price_percentage()

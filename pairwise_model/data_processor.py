@@ -62,11 +62,12 @@ class Data_processor:
 
     @staticmethod
     def process_data_linear_model():
-        stocks = 1475
+        stocks = 6
         db_connection_str = "mysql+pymysql://root:" + os.getenv('DB_PASSWORD') + "@localhost/stock_data"
         engine = create_engine(db_connection_str)
         query = text(
-            f"select open, high, low, close, volume, symbol, sma, ema, rsi, macd, bollinger_high, bollinger_low, stoch_oscillator, adx, mfi, `previous_day_change_percentage`, `next_day_change_percentage`, date(Date) dutc from new_stock_price where macd is not null order by dutc asc, Symbol asc")
+            f"""
+            select open, high, low, close, volume, symbol, sma, ema, rsi, macd, bollinger_high, bollinger_low, stoch_oscillator, adx, mfi, `previous_day_change_percentage`, `next_day_change_percentage`, date(Date) dutc from new_stock_price where macd is not null and symbol in ("aapl", "msft", "aig", "hsic", "ibm","intc") order by dutc asc, Symbol asc limit 14580""")
 
         with engine.connect() as conn:
             df = pd.read_sql(query, conn)
