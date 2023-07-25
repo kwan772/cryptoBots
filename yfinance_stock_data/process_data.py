@@ -182,7 +182,8 @@ class Process_data:
             SELECT * from new_stock_price a
             JOIN temp_stocks_ranked b 
             ON a.id = b.new_id
-            WHERE macd is not null''')
+            WHERE macd is not null
+            limit 14750''')
 
         with engine.connect() as conn:
             df = pd.read_sql(query, conn)
@@ -190,26 +191,44 @@ class Process_data:
 
             # Sort values by 'Symbol' and 'Date'
             df = df.sort_values(['d', 'Symbol'])
-            window_size = 7
+            window_size = 5
             print(df.columns)
-            df.drop(['Symbol', 'Date', 'Bollinger_High', 'Bollinger_Low','id', 'Dividends', 'Stock Splits', 'rank', 'd', 'new_id'], axis=1, inplace=True)
+            df.drop(['Symbol', 'Date', 'Bollinger_High', 'Bollinger_Low','id', 'Dividends', 'Stock Splits', 'rank', 'd', 'new_id','Open', 'High', 'Low','Stoch_Oscillator', 'ADX', 'MFI'], axis=1, inplace=True)
+            # df.drop(['Bollinger_High', 'Bollinger_Low','id', 'Dividends', 'Stock Splits', 'rank', 'd', 'new_id'], axis=1, inplace=True)
 
 
 
             train_sample = []
             label_sample = []
             count = 1
-
-            cols_to_scale = ['Open', 'High', 'Low', 'Close', 'Volume', 'SMA', 'EMA', 'RSI', 'MACD', 'Stoch_Oscillator', 'ADX', 'MFI', 'previous_day_change_percentage', 'ranking']
+            # delete nxpl, wint 'ABIO',
+            # 'ACHV',
+            # 'ADMP',
+            # 'ARMP',
+            # 'AULT',
+            # 'CTIC',
+            # 'DOMH',
+            # 'ELOX',
+            # 'FRTX',
+            # 'IMNN',
+            # 'LSTA',
+            # 'MBOT',
+            # 'TENX',
+            # 'THMO',
+            # 'YELL'
+            cols_to_scale = ['Close', 'Volume', 'SMA', 'EMA', 'RSI', 'MACD', 'previous_day_change_percentage', 'ranking']
+            # cols_to_scale = ['Open']
 
             # Initialize a scaler
             scaler = MinMaxScaler()
+            print(df)
 
             # Scale the columns
             df[cols_to_scale] = scaler.fit_transform(df[cols_to_scale])
+            print(df)
 
 
-
+            tem = 1
             for i in range(window_size * num_of_stocks, len(df), num_of_stocks):
                 one_day_train = []
                 one_day_label = []
@@ -222,6 +241,7 @@ class Process_data:
                         row = df.iloc[i + k - num_of_stocks * j]
                         # temp_label.append(row['next_day_change_percentage'])
                         temp_train.append(row.drop(['next_day_change_percentage','ranking']).values)
+
                     one_day_train.append(temp_train)
                     # one_day_label.append(temp_label)
 
@@ -239,8 +259,8 @@ class Process_data:
             print(train_sample.shape)
             print(label_sample.shape)
 
-            with open('processed_stock_ranking_data_all_symbols.pickle', 'wb') as f:
-                pickle.dump((train_sample, label_sample, original_label_sample), f)
+            # with open('processed_stock_ranking_data_all_symbols.pickle', 'wb') as f:
+            #     pickle.dump((train_sample, label_sample, original_label_sample), f)
 
 
 if __name__ == "__main__":

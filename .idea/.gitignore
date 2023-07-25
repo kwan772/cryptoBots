@@ -4,3 +4,5 @@
 *.csv
 stockAnalysis/stockData/combined2513days.csv
 *.v2
+*.pickle
+*.v2
