@@ -61,6 +61,7 @@ class RankingModel(tfrs.Model):
     def compute_loss(self, features, training=False):
         # print(features,"@@@@@@@@@@@@@@@")
         features = features[0]
+        # print(features)
         labels = features.pop("label")
 
         scores = self(features)
