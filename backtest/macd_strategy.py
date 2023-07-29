@@ -10,7 +10,7 @@ db_connection_str = 'mysql+pymysql://root:'+ os.getenv('DB_PASSWORD') +'@localho
 engine = create_engine(db_connection_str)
 df = None
 with engine.connect() as conn:
-    query = text("select * from new_stock_price where symbol = 'wmt' order by date asc")
+    query = text("select * from new_stock_price where symbol = 'aapl' order by date asc")
     conn.execute(query)
     df = pd.read_sql(query, conn)
 
